@@ -5,6 +5,7 @@ import com.kciamaga.demo.comparator.LocationComparator;
 import com.kciamaga.demo.dto.WeatherDto;
 import com.kciamaga.demo.dto.weatherBitApiDto.WeatherApiResponseDataDto;
 import com.kciamaga.demo.dto.weatherBitApiDto.WeatherApiResponseDto;
+import com.kciamaga.demo.enums.Countries;
 import com.kciamaga.demo.enums.ErrorCode;
 import com.kciamaga.demo.enums.Location;
 import com.kciamaga.demo.exception.ApiException;
@@ -13,7 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,16 +32,23 @@ public class WeatherService {
         //check if the date is in 16 days range
         validDate(date);
 
-        List<WeatherApiResponseDto> weatherApiResponseDtos = this.weatherClient.getWeather();
+        //check how many days do we need because we do not need to get all the records
+        final long days = ChronoUnit.DAYS.between(LocalDate.now(), date) + 1;
+
+        List<WeatherApiResponseDto> weatherApiResponseDtos = this.weatherClient.getWeather(days);
 
         List<WeatherDto> weatherDtos = mapWeatherApiResponseDtoToWeatherDtoAndValid(weatherApiResponseDtos, date);
 
-        if(weatherDtos.size() < 1)
+        if (weatherDtos.size() < 1)
             throw new ApiException(ErrorCode.NO_LOCATION_IS_SUITABLE_FOR_SURFING, HttpStatus.NOT_FOUND);
+
+        //todo is it better to check before "compareLocations" to not compare one record? is it faster?
+        if(weatherDtos.size() == 1)
+            return prepareResult(weatherDtos.get(0));
 
         WeatherDto result = compareLocations(weatherDtos);
 
-        return result.getCity() + " " + Location.getCountryByCountryCode(result.getCountryCode());
+        return prepareResult(result);
     }
 
 
@@ -49,10 +59,10 @@ public class WeatherService {
                 .stream()
                 .max(new LocationComparator());
 
-        if(response.isPresent())
+        if (response.isPresent())
             return response.get();
         else {
-            throw new ApiException(ErrorCode.RESPONSE_MAPPING_ERROR, HttpStatus.NOT_FOUND);
+            throw new ApiException(ErrorCode.COMPARING_LOCATIONS_ERROR, HttpStatus.NOT_FOUND);
         }
     }
 
@@ -70,30 +80,38 @@ public class WeatherService {
         final List<WeatherDto> weatherDtos = new ArrayList<>();
 
         for (WeatherApiResponseDto response : responseDtos) {
-            for (WeatherApiResponseDataDto data : response.getData()) {
+            //get the last record because in the last record we have our date
+            WeatherApiResponseDataDto data = response.getData()[response.getData().length - 1];
 
-                boolean isDateValid = data.getDatetime().equals(date);
-                //check if weather is suitable for surfing
-                boolean isWeatherSuitableForSurfing = (data.getWind_spd() >= 5 && data.getWind_spd() <= 18) && (data.getTemp() >= 5 && data.getTemp() <= 35);
+            //check if the date is valid
+            boolean isDateValid = data.getDatetime().equals(date);
 
-                if (isDateValid) {
-                    if (isWeatherSuitableForSurfing) {
-                        WeatherDto weatherDto = new WeatherDto();
-                        weatherDto.setCountryCode(response.getCountry_code());
-                        weatherDto.setCity(response.getCity_name());
-                        weatherDto.setWindSpeed(data.getWind_spd());
-                        weatherDto.setAverageTemperature(data.getTemp());
-                        weatherDtos.add(weatherDto);
-                        log.info("{} is suitable for surfing on {}", response.getCity_name(), data.getDatetime());
-                        break;
-                    }
+            //check if weather is suitable for surfing
+            boolean isWeatherSuitableForSurfing = (data.getWind_spd() >= 5 && data.getWind_spd() <= 18) && (data.getTemp() >= 5 && data.getTemp() <= 35);
+
+            if (isDateValid) {
+                if (isWeatherSuitableForSurfing) {
+                    WeatherDto weatherDto = new WeatherDto();
+                    weatherDto.setCountryCode(response.getCountry_code());
+                    weatherDto.setCity(response.getCity_name());
+                    weatherDto.setWindSpeed(data.getWind_spd());
+                    weatherDto.setAverageTemperature(data.getTemp());
+                    weatherDtos.add(weatherDto);
+                    log.info("{} is suitable for surfing on {}", response.getCity_name(), data.getDatetime());
+                } else {
                     log.info("{} is not suitable for surfing on {}.", response.getCity_name(), data.getDatetime());
-                    break;
                 }
+
             }
         }
         return weatherDtos;
     }
+
+    private String prepareResult(WeatherDto weatherDto) {
+        return weatherDto.getCity() + " " + Countries.getCountryByCountryCode(weatherDto.getCountryCode());
+    }
+
 }
+
 
 

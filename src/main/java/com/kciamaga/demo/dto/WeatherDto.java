@@ -13,7 +13,6 @@ import lombok.Setter;
 public class WeatherDto {
 
     private String city;
-    private String country;
     private String countryCode;
     private double averageTemperature;
     private double windSpeed;

@@ -1,6 +1,7 @@
 package com.kciamaga.demo.dto;
 
 
+import com.kciamaga.demo.enums.Countries;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,7 +14,8 @@ import lombok.Setter;
 public class LocationDto {
 
     private String city;
-    private String country;
-    private String countryCode;
+    private Countries country;
+    private double lat;
+    private double lon;
 
 }

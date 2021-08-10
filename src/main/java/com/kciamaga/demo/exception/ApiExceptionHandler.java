@@ -11,6 +11,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value = ApiException.class)
     public ResponseEntity<Object> handleApiException(ApiException apiException) {
-        return new ResponseEntity<>(apiException.getErrorCode().getDescritpion(), apiException.getHttpStatus());
+        return new ResponseEntity<>(apiException.getErrorCode().getDescription(), apiException.getHttpStatus());
     }
 }

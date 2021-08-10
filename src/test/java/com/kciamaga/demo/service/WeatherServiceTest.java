@@ -1,5 +1,6 @@
 package com.kciamaga.demo.service;
 
+import com.kciamaga.demo.dto.LocationDto;
 import com.kciamaga.demo.dto.weatherBitApiDto.WeatherApiResponseDataDto;
 import com.kciamaga.demo.dto.weatherBitApiDto.WeatherApiResponseDto;
 import com.kciamaga.demo.enums.ErrorCode;
@@ -21,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class WeatherServiceTest {
@@ -30,7 +32,6 @@ class WeatherServiceTest {
 
     @InjectMocks
     private  WeatherService weatherService;
-
 
 
     @Test
@@ -49,14 +50,13 @@ class WeatherServiceTest {
     @Test
     void getBestLocationForSurfingTest() throws ApiException {
         //given
-        Mockito.when(this.weatherClient.getWeather()).thenReturn(prepareWeatherApiResponseDtos());
+        Mockito.when(this.weatherClient.getWeather(any(Long.class))).thenReturn(prepareWeatherApiResponseDtos());
 
         //when
-        String result = this.weatherService.getBestLocationForSurfing(LocalDate.now());
+        String result = this.weatherService.getBestLocationForSurfing(LocalDate.of(2021,8,11));
 
         //then
         assertEquals("Jastarnia Poland", result);
-
     }
 
 
@@ -71,14 +71,16 @@ class WeatherServiceTest {
 
         WeatherApiResponseDataDto[]  dataDtosJastarnia = new WeatherApiResponseDataDto[2];
 
+        LocalDate date = LocalDate.of(2021,8,10);
+
         WeatherApiResponseDataDto dataDto = new WeatherApiResponseDataDto();
-        dataDto.setDatetime(LocalDate.now());
+        dataDto.setDatetime(date);
         dataDto.setTemp(23.7);
         dataDto.setWind_spd(17.7);
         dataDtosJastarnia[0] = dataDto;
 
         WeatherApiResponseDataDto dataDto2 = new WeatherApiResponseDataDto();
-        dataDto2.setDatetime(LocalDate.now().plusDays(1));
+        dataDto2.setDatetime(date.plusDays(1));
         dataDto2.setTemp(21.7);
         dataDto2.setWind_spd(7);
         dataDtosJastarnia[1] = dataDto2;
@@ -94,13 +96,13 @@ class WeatherServiceTest {
         WeatherApiResponseDataDto[]  dataDtosWarszawa = new WeatherApiResponseDataDto[2];
 
         WeatherApiResponseDataDto dataDto3 = new WeatherApiResponseDataDto();
-        dataDto3.setDatetime(LocalDate.now());
+        dataDto3.setDatetime(date);
         dataDto3.setTemp(16.7);
         dataDto3.setWind_spd(16.9);
         dataDtosWarszawa[0] = dataDto3;
 
         WeatherApiResponseDataDto dataDto4 = new WeatherApiResponseDataDto();
-        dataDto4.setDatetime(LocalDate.now().plusDays(1));
+        dataDto4.setDatetime(date.plusDays(1));
         dataDto4.setTemp(15.7);
         dataDto4.setWind_spd(8.9);
         dataDtosWarszawa[1] = dataDto4;

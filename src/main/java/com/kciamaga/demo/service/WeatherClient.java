@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -35,13 +36,14 @@ public class WeatherClient {
     private final ObjectMapper objectMapper;
 
 
-    public List<WeatherApiResponseDto> getWeather() throws ApiException {
+    public List<WeatherApiResponseDto> getWeather(long days) throws ApiException {
 
        final List<LocationDto> locations = getLocations();
        final List<WeatherApiResponseDto> responseDtos = new ArrayList<>();
 
         for(LocationDto locationDto : locations) {
-            String value = restTemplate.getForObject(WEATHER_APP_CLIENT_URL + "daily?city={city},{country}&key={apiKey}", String.class, locationDto.getCity(), locationDto.getCountryCode(), API_KEY);
+            String value = restTemplate.getForObject(WEATHER_APP_CLIENT_URL + "daily?city={city},{country}&key={apiKey}&days={days}&lat={lat}&lon={lon}",
+                    String.class, locationDto.getCity(), locationDto.getCountry().getCountryCode(), API_KEY, days, locationDto.getLat(), locationDto.getLon());
             try {
                 WeatherApiResponseDto weatherApiResponseDto= objectMapper.readValue(value, WeatherApiResponseDto.class);
                 responseDtos.add(weatherApiResponseDto);
@@ -53,20 +55,9 @@ public class WeatherClient {
         return responseDtos;
     }
 
-
     private List<LocationDto> getLocations() {
-        List<LocationDto> locationDtos = new ArrayList<>();
-        final Location[] locations = Location.values();
-
-        for(Location location : locations) {
-            for(String city : location.getLocations()) {
-                LocationDto locationDto = new LocationDto();
-                locationDto.setCity(city);
-                locationDto.setCountry(location.getCountry());
-                locationDto.setCountryCode(location.getCountryCode());
-                locationDtos.add(locationDto);
-            }
-        }
-        return locationDtos;
+        return Arrays.stream(Location.values())
+                .flatMap(s -> s.getLocationDto().stream())
+                .collect(Collectors.toList());
     }
 }
