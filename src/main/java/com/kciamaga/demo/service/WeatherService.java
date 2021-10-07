@@ -59,11 +59,7 @@ public class WeatherService {
                 .stream()
                 .max(new LocationComparator());
 
-        if (response.isPresent())
-            return response.get();
-        else {
-            throw new ApiException(ErrorCode.COMPARING_LOCATIONS_ERROR, HttpStatus.NOT_FOUND);
-        }
+        return response.orElseThrow(() -> new ApiException(ErrorCode.COMPARING_LOCATIONS_ERROR, HttpStatus.NOT_FOUND));
     }
 
 
